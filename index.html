@@ -11,7 +11,7 @@
             overflow: hidden;
             background-color: #02040a;
             font-family: 'Cinzel', 'Songti SC', serif;
-            touch-action: none;
+            touch-action: none; /* 禁止默认滚动，保证拖拽体验 */
             -webkit-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
@@ -253,7 +253,7 @@
             </div>
 
             <div style="display:flex; width: 100%; justify-content: center;">
-                <input type="text" id="oss-image-url" class="oss-input" placeholder="粘贴GitHub Raw链接...">
+                <input type="text" id="oss-image-url" class="oss-input" placeholder="粘贴GitHub链接(可选)...">
                 <button id="add-oss-image" class="upload-btn"
                     style="padding: 10px 15px; margin-left:8px; border:none; font-size: 16px; flex:0;">+</button>
             </div>
@@ -272,9 +272,14 @@
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
+        // --- 核心配置 (已优化树的大小和相机距离) ---
         const CONFIG = {
-            particles: { count: 1800, snowCount: 5000, smokeCount: 100, treeHeight: 24, treeRadius: 8 },
-            camera: { z: 60, y: 0 }
+            // 增加树的高度和半径
+            particles: { count: 1800, snowCount: 5000, smokeCount: 100, treeHeight: 28, treeRadius: 10 },
+            // mobileZ: 68 (手机端相机距离，越小越近，树越大)
+            // desktopZ: 45 (电脑端相机距离)
+            // y: 2 (稍微抬高相机，视角更好)
+            camera: { z: 60, y: 2, mobileZ: 68, desktopZ: 45 } 
         };
 
         const THEMES = {
@@ -314,90 +319,12 @@
         let raycaster = new THREE.Raycaster();
         let mouse = new THREE.Vector2();
 
-        // --- 已预置的 81 张照片链接 (直接使用原始链接以保证兼容性) ---
-        const githubRawImages = [
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/1.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/2.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/3.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/4.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/5.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/6.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/7.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/8.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/9.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/10.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/11.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/12.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/13.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/14.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/15.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/16.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/17.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/18.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/19.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/20.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/21.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/22.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/23.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/24.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/25.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/26.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/27.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/28.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/29.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/30.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/31.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/32.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/33.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/34.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/35.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/36.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/37.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/38.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/39.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/40.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/41.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/42.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/43.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/44.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/45.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/46.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/47.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/48.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/49.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/50.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/51.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/52.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/53.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/54.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/55.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/56.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/57.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/58.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/59.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/60.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/61.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/62.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/63.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/64.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/65.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/66.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/67.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/68.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/69.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/70.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/71.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/72.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/73.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/74.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/75.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/76.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/77.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/78.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/79.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/80.jpg",
-            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/81.jpg"
-        ];
+        // --- 自动生成 1.jpg 到 81.jpg 的相对路径 ---
+        // 这样可以利用 GitHub Pages 的 CDN 加速，解决加载慢的问题
+        const githubRawImages = [];
+        for (let i = 1; i <= 81; i++) {
+            githubRawImages.push(`${i}.jpg`);
+        }
 
         window.switchTheme = (themeName) => {
             if (!THEMES[themeName]) return;
@@ -429,8 +356,7 @@
             createSnow();
             createSmoke();
             
-            // 启动队列加载 (不再进行CDN转换，直接用原链，防止404)
-            // 确保场景先渲染出来，再加载图片
+            // 启动队列加载 (延迟一点确保场景准备好)
             setTimeout(() => {
                 loadImagesQueue(githubRawImages);
             }, 500);
@@ -448,15 +374,15 @@
             animate();
         }
 
-        // --- 队列加载系统 ---
+        // --- 队列加载系统 (使用相对路径 + 增加并发数) ---
 
         function loadImagesQueue(urls) {
             let index = 0;
             const total = urls.length;
             const progressBar = document.getElementById('progress-bar');
             
-            // 并发控制：为了防止太慢，我们每次同时请求 3 张图片
-            const CONCURRENT_LIMIT = 3;
+            // 并发数提高到 5，因为相对路径加载很快
+            const CONCURRENT_LIMIT = 5;
             let activeRequests = 0;
 
             function loadNext() {
@@ -465,14 +391,14 @@
                     return;
                 }
                 
-                // 如果当前活跃请求少于限制，则继续发起请求
                 while (activeRequests < CONCURRENT_LIMIT && index < total) {
                     const url = urls[index];
                     index++;
                     activeRequests++;
 
                     const loader = new THREE.TextureLoader();
-                    loader.setCrossOrigin('anonymous'); // 重要：跨域设置
+                    // 本地/同源不需要 crossOrigin，但为了兼容性保留
+                    // loader.setCrossOrigin('anonymous'); 
                     
                     loader.load(
                         url,
@@ -480,17 +406,14 @@
                             texture.colorSpace = THREE.SRGBColorSpace;
                             createPhotoObject(texture);
                             
-                            // 更新进度条
                             const percent = (index / total) * 100;
                             progressBar.style.width = `${percent}%`;
                             
                             activeRequests--;
-                            // 稍微延迟一点点，保持“蹦出来”的视觉节奏
-                            setTimeout(loadNext, 100); 
+                            setTimeout(loadNext, 50); // 间隔缩短，加快蹦出速度
                         },
                         undefined,
                         (err) => {
-                            // 失败了也不要停，继续下一个
                             console.warn('Failed to load:', url);
                             activeRequests--;
                             loadNext(); 
@@ -498,7 +421,7 @@
                     );
                 }
             }
-            loadNext(); // 开始加载
+            loadNext(); 
         }
 
         function initThree() {
@@ -508,7 +431,11 @@
 
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
             const aspect = window.innerWidth / window.innerHeight;
-            camera.position.set(0, CONFIG.camera.y, aspect < 1 ? 90 : 60);
+            
+            // --- 核心修改：根据设备调整相机距离 ---
+            // 手机端用 mobileZ，电脑端用 desktopZ，确保树足够大
+            const zPos = aspect < 1 ? CONFIG.camera.mobileZ : CONFIG.camera.desktopZ;
+            camera.position.set(0, CONFIG.camera.y, zPos);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -605,13 +532,10 @@
                 this.baseScale = mesh.scale.x;
                 this.randomOffset = Math.random() * 100;
                 
-                // --- 蹦出动画控制 ---
                 this.isSpawning = false;
                 if (type === 'PHOTO') {
                     this.isSpawning = true;
-                    // 初始位置设在树中心
                     this.mesh.position.set(0, mesh.position.y, 0); 
-                    // 初始缩放设为极小
                     this.mesh.scale.setScalar(0.01);
                 }
 
@@ -643,11 +567,10 @@
                 const angle = t * 40 * Math.PI + Math.random() * Math.PI;
                 const r = rMax * (0.8 + Math.random() * 0.4);
                 
-                // 树上位置
                 this.posTree.set(Math.cos(angle) * r, y, Math.sin(angle) * r);
                 
                 if (this.type === 'PHOTO') {
-                    // --- 球形星云分布 (解决重叠) ---
+                    // 球形星云分布
                     const vector = new THREE.Vector3().randomDirection();
                     const dist = 18 + Math.random() * 20; 
                     vector.multiplyScalar(dist);
@@ -687,7 +610,7 @@
                     return;
                 }
 
-                // --- 蹦出动画逻辑 ---
+                // 蹦出动画
                 if (this.isSpawning && mode === 'TREE') {
                     this.mesh.position.lerp(this.posTree, 4.0 * dt);
                     const currentS = this.mesh.scale.x;
@@ -698,7 +621,6 @@
                     if (this.mesh.position.distanceTo(this.posTree) < 0.1 && Math.abs(newS - targetS) < 0.01) {
                         this.isSpawning = false;
                     }
-                    
                     this.mesh.lookAt(camera.position);
                     return; 
                 }
@@ -938,8 +860,10 @@
             }
 
             if (STATE.isDragging && STATE.mode !== 'FOCUS') {
+                // 增加拖动灵敏度和全方位旋转
                 STATE.targetRotation.y += deltaX * 0.005;
                 STATE.targetRotation.x += deltaY * 0.005;
+                // 限制上下翻转角度，防止完全倒置
                 STATE.targetRotation.x = Math.max(-0.8, Math.min(0.8, STATE.targetRotation.x));
             }
             
@@ -964,6 +888,7 @@
                 const now = new Date().getTime();
                 const timeDiff = now - lastTapTime;
                 
+                // 双击检测
                 if (timeDiff < 300 && timeDiff > 0) {
                     document.getElementById('ui-layer').classList.toggle('ui-hidden');
                     lastTapTime = 0;
@@ -1020,10 +945,16 @@
 
         function setupEvents() {
             window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
-                const zPos = (window.innerWidth / window.innerHeight) < 1 ? 90 : 60;
+                // --- 窗口缩放时保持树的大小 ---
+                camera.aspect = window.innerWidth / window.innerHeight; 
+                camera.updateProjectionMatrix();
+                const aspect = window.innerWidth / window.innerHeight;
+                // 再次根据宽高比设置相机距离
+                const zPos = aspect < 1 ? CONFIG.camera.mobileZ : CONFIG.camera.desktopZ;
                 camera.position.set(0, CONFIG.camera.y, zPos);
-                renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight);
+
+                renderer.setSize(window.innerWidth, window.innerHeight); 
+                composer.setSize(window.innerWidth, window.innerHeight);
             });
             document.getElementById('file-input').addEventListener('change', handleImageUpload);
             document.getElementById('add-oss-image').addEventListener('click', addOSSImages);
