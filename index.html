@@ -11,7 +11,7 @@
             overflow: hidden;
             background-color: #02040a;
             font-family: 'Cinzel', 'Songti SC', serif;
-            touch-action: none; /* 禁止默认滚动，保证拖拽体验 */
+            touch-action: none;
             -webkit-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
@@ -191,7 +191,6 @@
             display: none;
         }
         
-        /* 进度条样式 */
         #progress-bar {
             position: absolute; bottom: 0; left: 0; height: 3px; background: #ffcc66; width: 0%; transition: width 0.2s; z-index: 100;
         }
@@ -272,14 +271,14 @@
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-        // --- 核心配置 (已优化树的大小和相机距离) ---
+        // --- 核心配置 ---
+        // 调整说明：
+        // mobileZ: 从68改回78，让树在手机上稍微远一点，不会填满屏幕边缘
+        // desktopZ: 从45改回55，电脑上同理
+        // y: 2，保持相机高度，确保看树底不难受
         const CONFIG = {
-            // 增加树的高度和半径
             particles: { count: 1800, snowCount: 5000, smokeCount: 100, treeHeight: 28, treeRadius: 10 },
-            // mobileZ: 68 (手机端相机距离，越小越近，树越大)
-            // desktopZ: 45 (电脑端相机距离)
-            // y: 2 (稍微抬高相机，视角更好)
-            camera: { z: 60, y: 2, mobileZ: 68, desktopZ: 45 } 
+            camera: { z: 60, y: 2, mobileZ: 78, desktopZ: 55 } 
         };
 
         const THEMES = {
@@ -319,8 +318,7 @@
         let raycaster = new THREE.Raycaster();
         let mouse = new THREE.Vector2();
 
-        // --- 自动生成 1.jpg 到 81.jpg 的相对路径 ---
-        // 这样可以利用 GitHub Pages 的 CDN 加速，解决加载慢的问题
+        // 81张图片循环
         const githubRawImages = [];
         for (let i = 1; i <= 81; i++) {
             githubRawImages.push(`${i}.jpg`);
@@ -356,7 +354,6 @@
             createSnow();
             createSmoke();
             
-            // 启动队列加载 (延迟一点确保场景准备好)
             setTimeout(() => {
                 loadImagesQueue(githubRawImages);
             }, 500);
@@ -364,7 +361,6 @@
             setupPostProcessing();
             setupEvents();
             
-            // 移除 Loading 遮罩
             const loader = document.getElementById('loader');
             if (loader) { 
                 loader.style.opacity = 0; 
@@ -374,14 +370,10 @@
             animate();
         }
 
-        // --- 队列加载系统 (使用相对路径 + 增加并发数) ---
-
         function loadImagesQueue(urls) {
             let index = 0;
             const total = urls.length;
             const progressBar = document.getElementById('progress-bar');
-            
-            // 并发数提高到 5，因为相对路径加载很快
             const CONCURRENT_LIMIT = 5;
             let activeRequests = 0;
 
@@ -390,35 +382,23 @@
                     if (activeRequests === 0) progressBar.style.width = '0%';
                     return;
                 }
-                
                 while (activeRequests < CONCURRENT_LIMIT && index < total) {
                     const url = urls[index];
                     index++;
                     activeRequests++;
-
                     const loader = new THREE.TextureLoader();
-                    // 本地/同源不需要 crossOrigin，但为了兼容性保留
-                    // loader.setCrossOrigin('anonymous'); 
-                    
-                    loader.load(
-                        url,
-                        (texture) => {
-                            texture.colorSpace = THREE.SRGBColorSpace;
-                            createPhotoObject(texture);
-                            
-                            const percent = (index / total) * 100;
-                            progressBar.style.width = `${percent}%`;
-                            
-                            activeRequests--;
-                            setTimeout(loadNext, 50); // 间隔缩短，加快蹦出速度
-                        },
-                        undefined,
-                        (err) => {
-                            console.warn('Failed to load:', url);
-                            activeRequests--;
-                            loadNext(); 
-                        }
-                    );
+                    loader.load(url, (texture) => {
+                        texture.colorSpace = THREE.SRGBColorSpace;
+                        createPhotoObject(texture);
+                        const percent = (index / total) * 100;
+                        progressBar.style.width = `${percent}%`;
+                        activeRequests--;
+                        setTimeout(loadNext, 50); 
+                    }, undefined, (err) => {
+                        console.warn('Failed to load:', url);
+                        activeRequests--;
+                        loadNext(); 
+                    });
                 }
             }
             loadNext(); 
@@ -431,9 +411,6 @@
 
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
             const aspect = window.innerWidth / window.innerHeight;
-            
-            // --- 核心修改：根据设备调整相机距离 ---
-            // 手机端用 mobileZ，电脑端用 desktopZ，确保树足够大
             const zPos = aspect < 1 ? CONFIG.camera.mobileZ : CONFIG.camera.desktopZ;
             camera.position.set(0, CONFIG.camera.y, zPos);
 
@@ -566,11 +543,9 @@
                 if (rMax < 0.5) rMax = 0.5;
                 const angle = t * 40 * Math.PI + Math.random() * Math.PI;
                 const r = rMax * (0.8 + Math.random() * 0.4);
-                
                 this.posTree.set(Math.cos(angle) * r, y, Math.sin(angle) * r);
                 
                 if (this.type === 'PHOTO') {
-                    // 球形星云分布
                     const vector = new THREE.Vector3().randomDirection();
                     const dist = 18 + Math.random() * 20; 
                     vector.multiplyScalar(dist);
@@ -617,7 +592,6 @@
                     const targetS = this.baseScale;
                     const newS = THREE.MathUtils.lerp(currentS, targetS, 4.0 * dt);
                     this.mesh.scale.setScalar(newS);
-
                     if (this.mesh.position.distanceTo(this.posTree) < 0.1 && Math.abs(newS - targetS) < 0.01) {
                         this.isSpawning = false;
                     }
@@ -632,9 +606,14 @@
                 if (mode === 'SCATTER') target = this.posScatter;
                 else if (mode === 'FOCUS') {
                     if (this.mesh === focusTargetMesh) {
-                        const invMatrix = new THREE.Matrix4().copy(mainGroup.matrixWorld).invert();
-                        const focusDist = camera.position.z * 0.8;
-                        target = new THREE.Vector3(0, 0, focusDist).applyMatrix4(invMatrix);
+                        // --- 关键修复：照片居中逻辑 ---
+                        // 计算相机正前方 20 单位处的世界坐标
+                        const distInFront = 20;
+                        const worldTarget = new THREE.Vector3(0, 0, -distInFront).applyMatrix4(camera.matrixWorld);
+                        
+                        // 将世界坐标转回树的局部坐标，抵消旋转
+                        const invModel = mainGroup.matrixWorld.clone().invert();
+                        target = worldTarget.applyMatrix4(invModel);
                     } else {
                         target = this.posScatter;
                     }
@@ -860,10 +839,8 @@
             }
 
             if (STATE.isDragging && STATE.mode !== 'FOCUS') {
-                // 增加拖动灵敏度和全方位旋转
                 STATE.targetRotation.y += deltaX * 0.005;
                 STATE.targetRotation.x += deltaY * 0.005;
-                // 限制上下翻转角度，防止完全倒置
                 STATE.targetRotation.x = Math.max(-0.8, Math.min(0.8, STATE.targetRotation.x));
             }
             
@@ -888,7 +865,6 @@
                 const now = new Date().getTime();
                 const timeDiff = now - lastTapTime;
                 
-                // 双击检测
                 if (timeDiff < 300 && timeDiff > 0) {
                     document.getElementById('ui-layer').classList.toggle('ui-hidden');
                     lastTapTime = 0;
@@ -945,11 +921,9 @@
 
         function setupEvents() {
             window.addEventListener('resize', () => {
-                // --- 窗口缩放时保持树的大小 ---
                 camera.aspect = window.innerWidth / window.innerHeight; 
                 camera.updateProjectionMatrix();
                 const aspect = window.innerWidth / window.innerHeight;
-                // 再次根据宽高比设置相机距离
                 const zPos = aspect < 1 ? CONFIG.camera.mobileZ : CONFIG.camera.desktopZ;
                 camera.position.set(0, CONFIG.camera.y, zPos);
 
