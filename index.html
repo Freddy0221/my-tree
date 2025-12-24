@@ -272,13 +272,12 @@
         import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
         // --- 核心配置 ---
-        // 调整说明：
-        // mobileZ: 从68改回78，让树在手机上稍微远一点，不会填满屏幕边缘
-        // desktopZ: 从45改回55，电脑上同理
-        // y: 2，保持相机高度，确保看树底不难受
+        // mobileZ: 90 (手机端距离)
+        // desktopZ: 50 (电脑端距离)
+        // y: 2 (相机略微抬高)
         const CONFIG = {
             particles: { count: 1800, snowCount: 5000, smokeCount: 100, treeHeight: 28, treeRadius: 10 },
-            camera: { z: 60, y: 2, mobileZ: 78, desktopZ: 55 } 
+            camera: { z: 60, y: 2, mobileZ: 90, desktopZ: 50 } 
         };
 
         const THEMES = {
@@ -389,6 +388,9 @@
                     const loader = new THREE.TextureLoader();
                     loader.load(url, (texture) => {
                         texture.colorSpace = THREE.SRGBColorSpace;
+                        // --- 关键优化：开启各向异性过滤，防止倾斜模糊变形 ---
+                        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                        
                         createPhotoObject(texture);
                         const percent = (index / total) * 100;
                         progressBar.style.width = `${percent}%`;
@@ -413,6 +415,9 @@
             const aspect = window.innerWidth / window.innerHeight;
             const zPos = aspect < 1 ? CONFIG.camera.mobileZ : CONFIG.camera.desktopZ;
             camera.position.set(0, CONFIG.camera.y, zPos);
+            
+            // --- 关键修复：相机注视中心，纠正透视变形和中心偏移 ---
+            camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -585,7 +590,6 @@
                     return;
                 }
 
-                // 蹦出动画
                 if (this.isSpawning && mode === 'TREE') {
                     this.mesh.position.lerp(this.posTree, 4.0 * dt);
                     const currentS = this.mesh.scale.x;
@@ -606,7 +610,7 @@
                 if (mode === 'SCATTER') target = this.posScatter;
                 else if (mode === 'FOCUS') {
                     if (this.mesh === focusTargetMesh) {
-                        // --- 关键修复：照片居中逻辑 ---
+                        // --- 关键修复：照片绝对居中逻辑 ---
                         // 计算相机正前方 20 单位处的世界坐标
                         const distInFront = 20;
                         const worldTarget = new THREE.Vector3(0, 0, -distInFront).applyMatrix4(camera.matrixWorld);
@@ -926,6 +930,8 @@
                 const aspect = window.innerWidth / window.innerHeight;
                 const zPos = aspect < 1 ? CONFIG.camera.mobileZ : CONFIG.camera.desktopZ;
                 camera.position.set(0, CONFIG.camera.y, zPos);
+                // --- 保持注视中心 ---
+                camera.lookAt(0, 0, 0);
 
                 renderer.setSize(window.innerWidth, window.innerHeight); 
                 composer.setSize(window.innerWidth, window.innerHeight);
