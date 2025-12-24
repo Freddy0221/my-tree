@@ -4,21 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Christmas Tree</title>
+    <title>Christmas Tree Memory</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: #02040a;
             font-family: 'Cinzel', 'Songti SC', serif;
-
             touch-action: none;
-
             -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
             user-select: none;
-
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -60,44 +55,6 @@
         .ui-hidden * {
             opacity: 0 !important;
             pointer-events: none !important;
-        }
-
-        #loader {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #02040a;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: opacity 1.0s ease-out;
-        }
-
-        .loader-text {
-            color: #ffcc66;
-            font-size: 14px;
-            letter-spacing: 2px;
-            margin-top: 20px;
-            font-weight: bold;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-top: 2px solid #ffcc66;
-            border-radius: 50%;
-            animation: spin 1s infinite linear;
-        }
-
-        @keyframes spin {
-            100% {
-                transform: rotate(360deg);
-            }
         }
 
         h1 {
@@ -233,29 +190,37 @@
         #file-input {
             display: none;
         }
-
-        #webcam-wrapper {
-            display: none;
+        
+        /* 进度条样式 */
+        #progress-bar {
+            position: absolute; bottom: 0; left: 0; height: 3px; background: #ffcc66; width: 0%; transition: width 0.2s; z-index: 100;
         }
+        
+        #loader {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #02040a; z-index: 100; display: flex; 
+            flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease-out;
+        }
+        .loader-text { color: #ffcc66; font-size: 14px; letter-spacing: 2px; margin-top: 20px; font-weight: bold; }
+        .spinner { width: 40px; height: 40px; border: 2px solid rgba(255, 255, 255, 0.1); border-top: 2px solid #ffcc66; border-radius: 50%; animation: spin 1s infinite linear; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
         @media (max-width: 600px) {
-            h1 {
-                font-size: 36px;
-            }
-
-            .controls-container {
-                width: 85%;
-            }
-
-            .oss-input {
-                width: 100%;
-                box-sizing: border-box;
-            }
+            h1 { font-size: 36px; }
+            .controls-container { width: 85%; }
+            .oss-input { width: 100%; box-sizing: border-box; }
         }
     </style>
 
-    <script
-        type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/+esm" } }</script>
+    <script type="importmap">
+        { 
+            "imports": { 
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", 
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" 
+            } 
+        }
+    </script>
 </head>
 
 <body>
@@ -263,13 +228,14 @@
     <div class="bg-gradient"></div>
     <div id="loader">
         <div class="spinner"></div>
-        <div class="loader-text">正在点亮圣诞树...</div>
+        <div class="loader-text">圣诞树点亮中...</div>
     </div>
+    <div id="progress-bar"></div>
     <div id="canvas-container"></div>
 
     <div id="ui-layer">
         <h1>Merry Christmas!</h1>
-        <h2>Author:Roy</h2>
+        <h2>Author:菲比</h2>
 
         <div class="theme-switcher">
             <div class="theme-btn t-classic active" onclick="window.switchTheme('CLASSIC')" title="经典"></div>
@@ -280,28 +246,23 @@
         <div class="controls-container">
             <div class="action-row">
                 <label class="upload-btn">
-                    上传照片
+                    上传本地照片
                     <input type="file" id="file-input" multiple accept="image/*">
                 </label>
-                <button id="hide-ui-btn" class="hide-btn" title="双击背景也可恢复">隐藏菜单，双击恢复</button>
+                <button id="hide-ui-btn" class="hide-btn" title="双击背景也可恢复">隐藏菜单</button>
             </div>
 
             <div style="display:flex; width: 100%; justify-content: center;">
-                <input type="text" id="oss-image-url" class="oss-input" placeholder="粘贴图片链接...">
+                <input type="text" id="oss-image-url" class="oss-input" placeholder="粘贴GitHub Raw链接...">
                 <button id="add-oss-image" class="upload-btn"
                     style="padding: 10px 15px; margin-left:8px; border:none; font-size: 16px; flex:0;">+</button>
             </div>
             <div class="hint-text" id="hint-text-content">
-                放大照片:ok状捏合手指/鼠标单击<br>
-                旋转视角:手掌移动/鼠标拖动<br>
-                圣诞树视角:握拳/鼠标单击空白处
+                放大照片: 单击照片<br>
+                旋转视角: 全方位拖动屏幕<br>
+                散落/树形切换: 单击空白处
             </div>
         </div>
-    </div>
-
-    <div id="webcam-wrapper">
-        <video id="webcam" autoplay playsinline style="display:none;"></video>
-        <canvas id="webcam-preview"></canvas>
     </div>
 
     <script type="module">
@@ -310,7 +271,6 @@
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-        import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
 
         const CONFIG = {
             particles: { count: 1800, snowCount: 5000, smokeCount: 100, treeHeight: 24, treeRadius: 8 },
@@ -336,11 +296,11 @@
             mode: 'TREE',
             lastMode: 'TREE',
             focusTarget: null,
-            nearestTarget: null,
-            hand: { detected: false, x: 0, y: 0 },
             rotation: { x: 0, y: 0 },
+            targetRotation: { x: 0, y: 0 },
             currentTheme: 'CLASSIC',
-            isDragging: false
+            isDragging: false,
+            autoRotate: true
         };
 
         let scene, camera, renderer, composer, bloomPass;
@@ -353,10 +313,91 @@
         let innerLight, spotLight, ambientLight;
         let raycaster = new THREE.Raycaster();
         let mouse = new THREE.Vector2();
-        let handLandmarker, video, lastVideoTime = -1;
 
-        // 【修改点：定义基础链接】
-        const GITHUB_BASE = "https://fastly.jsdelivr.net/gh/Freddy0221/my-tree@d3544c374f6a2f0c56bae73faec46cdc922731a5/";
+        // --- 已预置的 81 张照片链接 (直接使用原始链接以保证兼容性) ---
+        const githubRawImages = [
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/1.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/2.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/3.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/4.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/5.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/6.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/7.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/8.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/9.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/10.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/11.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/12.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/13.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/14.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/15.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/16.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/17.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/18.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/19.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/20.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/21.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/22.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/23.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/24.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/25.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/26.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/27.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/28.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/29.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/30.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/31.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/32.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/33.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/34.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/35.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/36.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/37.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/38.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/39.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/40.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/41.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/42.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/43.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/44.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/45.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/46.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/47.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/48.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/49.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/50.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/51.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/52.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/53.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/54.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/55.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/56.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/57.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/58.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/59.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/60.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/61.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/62.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/63.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/64.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/65.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/66.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/67.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/68.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/69.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/70.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/71.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/72.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/73.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/74.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/75.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/76.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/77.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/78.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/79.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/80.jpg",
+            "https://raw.githubusercontent.com/Freddy0221/my-tree/d3544c374f6a2f0c56bae73faec46cdc922731a5/81.jpg"
+        ];
 
         window.switchTheme = (themeName) => {
             if (!THEMES[themeName]) return;
@@ -387,16 +428,77 @@
             createTreeParticles();
             createSnow();
             createSmoke();
-            addOSSImages();
+            
+            // 启动队列加载 (不再进行CDN转换，直接用原链，防止404)
+            // 确保场景先渲染出来，再加载图片
+            setTimeout(() => {
+                loadImagesQueue(githubRawImages);
+            }, 500);
+            
             setupPostProcessing();
             setupEvents();
-
-            try { await initMediaPipe(); } catch (e) { console.warn("Webcam skipped:", e); }
-
+            
+            // 移除 Loading 遮罩
             const loader = document.getElementById('loader');
-            if (loader) { loader.style.opacity = 0; setTimeout(() => loader.remove(), 1000); }
-
+            if (loader) { 
+                loader.style.opacity = 0; 
+                setTimeout(() => loader.remove(), 1000); 
+            }
+            
             animate();
+        }
+
+        // --- 队列加载系统 ---
+
+        function loadImagesQueue(urls) {
+            let index = 0;
+            const total = urls.length;
+            const progressBar = document.getElementById('progress-bar');
+            
+            // 并发控制：为了防止太慢，我们每次同时请求 3 张图片
+            const CONCURRENT_LIMIT = 3;
+            let activeRequests = 0;
+
+            function loadNext() {
+                if (index >= total) {
+                    if (activeRequests === 0) progressBar.style.width = '0%';
+                    return;
+                }
+                
+                // 如果当前活跃请求少于限制，则继续发起请求
+                while (activeRequests < CONCURRENT_LIMIT && index < total) {
+                    const url = urls[index];
+                    index++;
+                    activeRequests++;
+
+                    const loader = new THREE.TextureLoader();
+                    loader.setCrossOrigin('anonymous'); // 重要：跨域设置
+                    
+                    loader.load(
+                        url,
+                        (texture) => {
+                            texture.colorSpace = THREE.SRGBColorSpace;
+                            createPhotoObject(texture);
+                            
+                            // 更新进度条
+                            const percent = (index / total) * 100;
+                            progressBar.style.width = `${percent}%`;
+                            
+                            activeRequests--;
+                            // 稍微延迟一点点，保持“蹦出来”的视觉节奏
+                            setTimeout(loadNext, 100); 
+                        },
+                        undefined,
+                        (err) => {
+                            // 失败了也不要停，继续下一个
+                            console.warn('Failed to load:', url);
+                            activeRequests--;
+                            loadNext(); 
+                        }
+                    );
+                }
+            }
+            loadNext(); // 开始加载
         }
 
         function initThree() {
@@ -432,12 +534,12 @@
 
         function setupLights() {
             const t = THEMES.CLASSIC;
-            ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // 提高环境光强度 (从0.5到0.8)
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambientLight);
-            innerLight = new THREE.PointLight(t.light, 4, 30);   // 提高点光源强度 (从3到4)
+            innerLight = new THREE.PointLight(t.light, 4, 30);
             innerLight.position.set(0, 6, 0);
             mainGroup.add(innerLight);
-            spotLight = new THREE.SpotLight(t.light, 1500);      // 提高聚光灯强度 (从1200到1500)
+            spotLight = new THREE.SpotLight(t.light, 1500);
             spotLight.position.set(30, 40, 40);
             spotLight.angle = 0.5;
             spotLight.penumbra = 0.5;
@@ -502,6 +604,16 @@
                 this.posScatter = new THREE.Vector3();
                 this.baseScale = mesh.scale.x;
                 this.randomOffset = Math.random() * 100;
+                
+                // --- 蹦出动画控制 ---
+                this.isSpawning = false;
+                if (type === 'PHOTO') {
+                    this.isSpawning = true;
+                    // 初始位置设在树中心
+                    this.mesh.position.set(0, mesh.position.y, 0); 
+                    // 初始缩放设为极小
+                    this.mesh.scale.setScalar(0.01);
+                }
 
                 if (type === 'SNOW') {
                     this.velocity = new THREE.Vector3((Math.random() - 0.5) * 0.5, -(0.1 + Math.random() * 0.2), (Math.random() - 0.5) * 0.5);
@@ -530,33 +642,16 @@
                 if (rMax < 0.5) rMax = 0.5;
                 const angle = t * 40 * Math.PI + Math.random() * Math.PI;
                 const r = rMax * (0.8 + Math.random() * 0.4);
+                
+                // 树上位置
                 this.posTree.set(Math.cos(angle) * r, y, Math.sin(angle) * r);
+                
                 if (this.type === 'PHOTO') {
-                    if (this.mesh.userData.index === undefined) {
-                        const photos = photoMeshGroup.children;
-                        for (let i = 0; i < photos.length; i++) {
-                            if (photos[i] === this.mesh) {
-                                this.mesh.userData.index = i;
-                                break;
-                            }
-                        }
-                        if (this.mesh.userData.index === undefined) {
-                            this.mesh.userData.index = photos.length;
-                        }
-                    }
-
-                    const index = this.mesh.userData.index;
-                    const totalSlots = 20;
-                    const slotIndex = index % totalSlots;
-                    const radius = 28;
-                    const theta = (slotIndex / totalSlots) * Math.PI * 2;
-                    const posY = (Math.random() - 0.5) * 4;
-
-                    this.posScatter.set(
-                        radius * Math.cos(theta),
-                        posY,
-                        radius * Math.sin(theta)
-                    );
+                    // --- 球形星云分布 (解决重叠) ---
+                    const vector = new THREE.Vector3().randomDirection();
+                    const dist = 18 + Math.random() * 20; 
+                    vector.multiplyScalar(dist);
+                    this.posScatter.copy(vector);
                 } else {
                     let rScatter = 12 + Math.random() * 20;
                     const theta = Math.random() * Math.PI * 2;
@@ -590,6 +685,22 @@
                         this.mesh.scale.setScalar(2 + Math.random());
                     }
                     return;
+                }
+
+                // --- 蹦出动画逻辑 ---
+                if (this.isSpawning && mode === 'TREE') {
+                    this.mesh.position.lerp(this.posTree, 4.0 * dt);
+                    const currentS = this.mesh.scale.x;
+                    const targetS = this.baseScale;
+                    const newS = THREE.MathUtils.lerp(currentS, targetS, 4.0 * dt);
+                    this.mesh.scale.setScalar(newS);
+
+                    if (this.mesh.position.distanceTo(this.posTree) < 0.1 && Math.abs(newS - targetS) < 0.01) {
+                        this.isSpawning = false;
+                    }
+                    
+                    this.mesh.lookAt(camera.position);
+                    return; 
                 }
 
                 let target = this.posTree;
@@ -706,12 +817,9 @@
             }
         }
 
-        // 【核心修改：批量添加 81 张照片】
         function addOSSImages() { 
-            for (let i = 1; i <= 81; i++) {
-                const imageUrl = `${GITHUB_BASE}${i}.jpg`;
-                addOSSImageToScene(imageUrl);
-            }
+            const url = document.getElementById('oss-image-url').value.trim();
+            if(url) loadImagesQueue([url]);
         }
 
         function createPhotoObject(texture = null) {
@@ -758,112 +866,29 @@
             particleSystem.push(new Particle(group, 'PHOTO'));
         }
 
-        function addOSSImageToScene(imageUrl) {
-            const loader = new THREE.TextureLoader();
-            loader.setCrossOrigin('anonymous');
-            loader.load(imageUrl,
-                (texture) => { texture.colorSpace = THREE.SRGBColorSpace; createPhotoObject(texture); },
-                undefined,
-                () => { createPhotoObject(null); }
-            );
-        }
 
         function handleImageUpload(e) {
             const files = e.target.files;
             if (!files.length) return;
-            Array.from(files).forEach(f => {
+            
+            let index = 0;
+            const fileArray = Array.from(files);
+            
+            function loadNextLocal() {
+                if (index >= fileArray.length) return;
+                const f = fileArray[index];
                 const reader = new FileReader();
                 reader.onload = (ev) => {
                     new THREE.TextureLoader().load(ev.target.result, (t) => {
-                        t.colorSpace = THREE.SRGBColorSpace; createPhotoObject(t);
+                        t.colorSpace = THREE.SRGBColorSpace; 
+                        createPhotoObject(t);
+                        index++;
+                        setTimeout(loadNextLocal, 150);
                     });
                 }
                 reader.readAsDataURL(f);
-            });
-        }
-
-        async function initMediaPipe() {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-            if (isMobile) {
-                console.log("检测到移动设备，禁用摄像头功能以优化性能。");
-                const hintText = document.getElementById('hint-text-content');
-                if (hintText) {
-                    hintText.innerHTML = "放大照片: 点击照片<br>旋转视角: 拖动屏幕<br>隐藏菜单: 双击背景";
-                }
-                return;
             }
-
-            video = document.getElementById('webcam');
-            const vision = await FilesetResolver.forVisionTasks(
-                "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-            );
-            handLandmarker = await HandLandmarker.createFromOptions(vision, {
-                baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`, delegate: "GPU" },
-                runningMode: "VIDEO", numHands: 1
-            });
-            if (navigator.mediaDevices?.getUserMedia) {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream; video.addEventListener("loadeddata", predictWebcam);
-            }
-        }
-
-        async function predictWebcam() {
-            if (video.currentTime !== lastVideoTime && handLandmarker) {
-                lastVideoTime = video.currentTime;
-                const result = handLandmarker.detectForVideo(video, performance.now());
-                processGestures(result);
-            }
-            requestAnimationFrame(predictWebcam);
-        }
-
-        function processGestures(result) {
-            if (result.landmarks && result.landmarks.length > 0) {
-                STATE.hand.detected = true;
-                const lm = result.landmarks[0];
-                STATE.hand.x = -(lm[9].x - 0.5) * 2;
-                STATE.hand.y = (lm[9].y - 0.5) * 2;
-
-                const pinch = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y);
-                const avgDist = (Math.hypot(lm[8].x - lm[0].x, lm[8].y - lm[0].y) + Math.hypot(lm[12].x - lm[0].x, lm[12].y - lm[0].y)) / 2;
-
-                let minDistance = Infinity;
-                let nearest = null;
-
-                photoMeshGroup.children.forEach(group => {
-                    const worldPos = new THREE.Vector3();
-                    group.getWorldPosition(worldPos);
-                    const dist = worldPos.distanceTo(camera.position);
-
-                    if (dist < minDistance) {
-                        minDistance = dist;
-                        nearest = group;
-                    }
-                });
-
-                STATE.nearestTarget = nearest;
-
-                if (pinch < 0.05) {
-                    if (STATE.nearestTarget && STATE.mode !== 'FOCUS') {
-                        STATE.lastMode = STATE.mode;
-                        STATE.mode = 'FOCUS';
-                        STATE.focusTarget = STATE.nearestTarget;
-                    }
-                } else if (avgDist < 0.2) {
-                    if (STATE.mode !== 'TREE') {
-                        STATE.rotation.y = 0;
-                        STATE.rotation.x = 0;
-                    }
-                    STATE.mode = 'TREE';
-                    STATE.focusTarget = null;
-                } else if (avgDist > 0.3) {
-                    STATE.mode = 'SCATTER';
-                    STATE.focusTarget = null;
-                }
-            } else {
-                STATE.hand.detected = false;
-                STATE.nearestTarget = null;
-            }
+            loadNextLocal();
         }
 
 
@@ -883,10 +908,14 @@
             }
 
             STATE.isDragging = false;
+            STATE.autoRotate = false;
             isLongPress = false;
+            
             const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
             const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+            
             previousMousePosition = { x: clientX, y: clientY };
+            
             pressTimer = setTimeout(() => {
                 if (!STATE.isDragging) {
                     isLongPress = true;
@@ -896,18 +925,24 @@
 
         function onPointerMove(e) {
             if (e.type === 'mousemove' && e.buttons !== 1) return;
+            
             const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
             const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+            
             const deltaX = clientX - previousMousePosition.x;
             const deltaY = clientY - previousMousePosition.y;
+
             if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
                 STATE.isDragging = true;
                 clearTimeout(pressTimer);
             }
-            if (STATE.isDragging) {
-                STATE.rotation.y += deltaX * 0.005;
-                STATE.rotation.x += deltaY * 0.005;
+
+            if (STATE.isDragging && STATE.mode !== 'FOCUS') {
+                STATE.targetRotation.y += deltaX * 0.005;
+                STATE.targetRotation.x += deltaY * 0.005;
+                STATE.targetRotation.x = Math.max(-0.8, Math.min(0.8, STATE.targetRotation.x));
             }
+            
             previousMousePosition = { x: clientX, y: clientY };
         }
 
@@ -924,9 +959,11 @@
             }
 
             clearTimeout(pressTimer);
+            
             if (!STATE.isDragging && !isLongPress) {
                 const now = new Date().getTime();
                 const timeDiff = now - lastTapTime;
+                
                 if (timeDiff < 300 && timeDiff > 0) {
                     document.getElementById('ui-layer').classList.toggle('ui-hidden');
                     lastTapTime = 0;
@@ -941,6 +978,7 @@
                 raycaster.setFromCamera(mouse, camera);
 
                 const intersects = raycaster.intersectObjects(photoMeshGroup.children, true);
+                
                 if (intersects.length > 0) {
                     let targetGroup = intersects[0].object;
                     while (targetGroup.parent !== photoMeshGroup) targetGroup = targetGroup.parent;
@@ -960,16 +998,19 @@
                 } else {
                     if (STATE.mode === 'TREE') {
                         STATE.mode = 'SCATTER';
+                        STATE.autoRotate = false;
                     } else if (STATE.mode === 'SCATTER') {
-                        STATE.rotation.y = 0;
-                        STATE.rotation.x = 0;
+                        STATE.targetRotation.y = 0;
+                        STATE.targetRotation.x = 0;
                         STATE.mode = 'TREE';
+                        STATE.autoRotate = true; 
                     } else if (STATE.mode === 'FOCUS') {
                         STATE.mode = STATE.lastMode || 'TREE';
                         STATE.focusTarget = null;
                         if (STATE.mode === 'TREE') {
-                            STATE.rotation.y = 0;
-                            STATE.rotation.x = 0;
+                            STATE.targetRotation.y = 0;
+                            STATE.targetRotation.x = 0;
+                            STATE.autoRotate = true;
                         }
                     }
                 }
@@ -985,12 +1026,9 @@
                 renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight);
             });
             document.getElementById('file-input').addEventListener('change', handleImageUpload);
-            document.getElementById('add-oss-image').addEventListener('click', () => {
-                const url = document.getElementById('oss-image-url').value.trim();
-                if (url) { addOSSImageToScene(url); document.getElementById('oss-image-url').value = ''; }
-            });
+            document.getElementById('add-oss-image').addEventListener('click', addOSSImages);
             document.getElementById('hide-ui-btn').addEventListener('click', () => {
-                document.getElementById('ui-layer').classList.add('index').add('ui-hidden');
+                document.getElementById('ui-layer').classList.add('ui-hidden');
             });
 
             window.addEventListener('mousedown', onPointerDown);
@@ -1009,18 +1047,14 @@
             const dt = clock.getDelta();
             const time = clock.elapsedTime;
 
-            if (!STATE.isDragging && STATE.mode !== 'FOCUS' && !STATE.hand.detected) {
-                if (STATE.mode === 'TREE') {
-                    STATE.rotation.y += 0.2 * dt;
+            if (!STATE.isDragging && STATE.mode !== 'FOCUS') {
+                if (STATE.mode === 'TREE' && STATE.autoRotate) {
+                    STATE.targetRotation.y += 0.2 * dt;
                 }
             }
 
-            if (STATE.mode === 'SCATTER' && STATE.hand.detected) {
-                const targetRotY = STATE.hand.x * Math.PI * 3;
-                const targetRotX = STATE.hand.y * Math.PI * 0.8;
-                STATE.rotation.y += (targetRotY - STATE.rotation.y) * 6.0 * dt;
-                STATE.rotation.x += (targetRotX - STATE.rotation.x) * 6.0 * dt;
-            }
+            STATE.rotation.x += (STATE.targetRotation.x - STATE.rotation.x) * 0.1;
+            STATE.rotation.y += (STATE.targetRotation.y - STATE.rotation.y) * 0.1;
 
             mainGroup.rotation.y = STATE.rotation.y;
             mainGroup.rotation.x = STATE.rotation.x;
@@ -1031,11 +1065,9 @@
 
             photoMeshGroup.children.forEach(group => {
                 const frame = group.children[0];
-
-                const isNearestHover = (group === STATE.nearestTarget && STATE.hand.detected && STATE.mode !== 'FOCUS');
                 const isFocused = (group === STATE.focusTarget);
 
-                if (isFocused || isNearestHover) {
+                if (isFocused) {
                     frame.material = materials.frameHighlight;
                 } else {
                     frame.material = materials.frameNormal;
